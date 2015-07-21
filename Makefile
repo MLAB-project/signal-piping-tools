@@ -10,13 +10,17 @@ LIBS		= -lm
 CC			= gcc $(CCFLAGS)
 LD			= gcc $(LDFLAGS)
 
-BINS		= servecmd servestream ptee hpsdrrecv
+BINS		= fitsread servecmd servestream ptee hpsdrrecv
 
 all: $(BINS)
 
 clean:
 	$(Q) rm -f *.o $(BINS)
 	@printf "  CLEAN\n";
+
+fitsread: fitsread.c
+	@printf "  CC  $(subst $(shell pwd)/,,$(@))\n";
+	$(Q) $(CC) -o$@ $< $(LIBS) -lcfitsio
 
 %: %.c
 	@printf "  CC  $(subst $(shell pwd)/,,$(@))\n";
