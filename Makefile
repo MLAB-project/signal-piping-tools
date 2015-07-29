@@ -10,7 +10,7 @@ LIBS		= -lm
 CC			= gcc $(CCFLAGS)
 LD			= gcc $(LDFLAGS)
 
-BINS		= fitsread servecmd servestream ptee hpsdrrecv x_fir_dec
+BINS		= fitsread servecmd servestream ptee hpsdrrecv x_fir_dec sdr-widget
 
 all: $(BINS)
 
@@ -21,6 +21,10 @@ clean:
 x_fir_dec: x_fir_dec.c
 	@printf "  CC  $(subst $(shell pwd)/,,$(@))\n";
 	$(Q) $(CC) -o$@ $< $(LIBS) -lvolk
+
+sdr-widget: sdr-widget.c
+	@printf "  CC  $(subst $(shell pwd)/,,$(@))\n";
+	$(Q) $(CC) -o$@ $< $(LIBS) -lusb-1.0
 
 fitsread: fitsread.c
 	@printf "  CC  $(subst $(shell pwd)/,,$(@))\n";
