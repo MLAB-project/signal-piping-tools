@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
 
 		if (pid == 0) {
 			dup2(csock, STDIN_FILENO);
+			dup2(csock, STDOUT_FILENO);
 			close(csock);
 			fflush(stderr);
 			char *args[4] = {"/bin/sh", "-c", cmd, NULL};
