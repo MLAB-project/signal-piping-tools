@@ -8,6 +8,8 @@
 #include <errno.h>
 #include <signal.h>
 
+#define MAX_NCONNS 16
+
 void usage(char *prgname)
 {
 	fprintf(stderr, "%s: usage: %s [-p PORT]\n", prgname, prgname);
@@ -55,9 +57,15 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	listen(sock, 1);
+	if (listen(sock, 1) < 0) {
+		fprintf(stderr, "%s: listen: %s\n", argv[0], strerror(errno));
+		exit(1);
+	}
 
-	int wsock = -1;
+	int wsocks[MAX_NCONNS];
+	int i;
+	for (i = 0; i < MAX_NCONNS; i++)
+		wsocks[i] = -1;
 
 	while (1) {
 		int size;
@@ -70,7 +78,7 @@ int main(int argc, char *argv[])
 		int rv = select(sock + 1, &rset, NULL, NULL, NULL);
 
 		if (rv < 0) {
-			perror("select");
+			fprintf(stderr, "%s: select: %s\n", argv[0], strerror(errno));
 			exit(1);
 		}
 
@@ -83,10 +91,17 @@ int main(int argc, char *argv[])
 				exit(1);
 			}
 
-			if (wsock > 0)
+			for (i = 0; i < MAX_NCONNS; i++) {
+				if (wsocks[i] < 0) {
+					wsocks[i] = csock;
+					break;
+				}
+			}
+
+			if (i >= MAX_NCONNS) {
+				fprintf(stderr, "%s: no free slot for the new incoming connection, closing\n");
 				close(csock);
-			else
-				wsock = csock;
+			}
 		}
 
 		if (FD_ISSET(STDIN_FILENO, &rset)) {
@@ -102,17 +117,21 @@ int main(int argc, char *argv[])
 				exit(1);
 			}
 
-			if (wsock > 0) {
-				int wret = write(wsock, buff, ret);
+			for (i = 0; i < MAX_NCONNS; i++) {
+				if (wsocks[i] < 0)
+					continue;
+
+				int wret = write(wsocks[i], buff, ret);
 
 				if (wret < 0) {
-					close(wsock);
-					wsock = -1;
-				} else {
-					if (wret != ret) { /* TODO */
-						perror("short write");
-						exit(1);
-					}
+					close(wsocks[i]);
+					wsocks[i] = -1;
+					continue;
+				}
+
+				if (wret != ret) { /* TODO */
+					perror("short write");
+					exit(1);
 				}
 			}
 		}
