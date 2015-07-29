@@ -1,0 +1,48 @@
+#!/usr/bin/python
+
+import sys
+import argparse
+import numpy as np
+
+def lowpass(w_c, N, start=None):
+	a = np.arange(N) - (float(N - 1) / 2)
+	taps = np.sin(a * w_c) / a / np.pi
+
+	if N % 2 == 1:
+		taps[N/2] = w_c / np.pi
+
+	return taps
+
+WINDOW_FUNC = {
+	'rectangular': lambda a: np.zeros(a) + 1,
+	'hamming': np.hamming,
+	'hanning': lambda a: np.hanning(a + 2)[1:-1]
+}
+
+def window_by_name(name):
+	try:
+		return WINDOW_FUNC[name]
+	except KeyError:
+		msg = "%r is not a known windowing function" % name
+		raise argparse.ArgumentTypeError(msg)
+
+def main():
+	parser = argparse.ArgumentParser(description='Produce taps for a low-pass FIR filter.')
+
+	parser.add_argument('-n', metavar='NUMBER', type=int, required=True,
+						help='number of taps')
+	parser.add_argument('-r', metavar='RATE', type=float, required=True,
+						help='sample rate')
+	parser.add_argument('-c', metavar='FREQ', type=float, required=True,
+						help='cutoff frequency')
+	parser.add_argument('-w', metavar='WINDOW', type=window_by_name, required=True,
+						help='windowing function, one of: ' + ', '.join(WINDOW_FUNC.keys()))
+
+	args = parser.parse_args()
+
+	taps = lowpass((args.c / args.r) * 2 * np.pi, args.n) * args.w(args.n)
+
+	np.savetxt(sys.stdout, taps)
+
+if __name__ == "__main__":
+	main()
