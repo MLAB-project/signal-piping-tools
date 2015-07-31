@@ -9,19 +9,23 @@
 
 void usage(char *prgname)
 {
-	fprintf(stderr, "%s: usage: %s [-p PORT] COMMAND\n", prgname, prgname);
+	fprintf(stderr, "%s: usage: %s [-d] [-p PORT] COMMAND\n", prgname, prgname);
 	exit(1);
 }
 
 int main(int argc, char *argv[])
 {
 	short port = 2300;
+	int run_in_background = 0;
 
 	int opt;
-	while ((opt = getopt(argc, argv, "p:")) != -1) {
+	while ((opt = getopt(argc, argv, "dp:")) != -1) {
 		switch (opt) {
 			case 'p':
 				port = atoi(optarg);
+				break;
+			case 'd':
+				run_in_background = 1;
 				break;
 			default:
 				usage(argv[0]);
@@ -54,7 +58,17 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	listen(sock, 1);
+	if (listen(sock, 1) < 0) {
+		fprintf(stderr, "%s: listen: %s\n", argv[0], strerror(errno));
+		exit(1);
+	}
+
+	if (run_in_background) {
+		if (daemon(1, 1) < 0) {
+			fprintf(stderr, "%s: daemon: %s\n", argv[0], strerror(errno));
+			exit(1);
+		}
+	}
 
 	while (1) {
 		int size;

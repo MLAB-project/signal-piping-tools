@@ -12,7 +12,7 @@
 
 void usage(char *prgname)
 {
-	fprintf(stderr, "%s: usage: %s [-p PORT]\n", prgname, prgname);
+	fprintf(stderr, "%s: usage: %s [-d] [-p PORT]\n", prgname, prgname);
 	exit(1);
 }
 
@@ -43,12 +43,16 @@ int main(int argc, char *argv[])
 	signal(SIGPIPE, SIG_IGN);
 
 	short port = 2300;
+	int run_in_background = 0;
 
 	int opt;
-	while ((opt = getopt(argc, argv, "p:")) != -1) {
+	while ((opt = getopt(argc, argv, "dp:")) != -1) {
 		switch (opt) {
 			case 'p':
 				port = atoi(optarg);
+				break;
+			case 'd':
+				run_in_background = 1;
 				break;
 			default:
 				usage(argv[0]);
@@ -82,6 +86,13 @@ int main(int argc, char *argv[])
 	if (listen(sock, 1) < 0) {
 		fprintf(stderr, "%s: listen: %s\n", argv[0], strerror(errno));
 		exit(1);
+	}
+
+	if (run_in_background) {
+		if (daemon(1, 1) < 0) {
+			fprintf(stderr, "%s: daemon: %s\n", argv[0], strerror(errno));
+			exit(1);
+		}
 	}
 
 	int wsocks[MAX_NCONNS];
@@ -135,8 +146,8 @@ int main(int argc, char *argv[])
 			if (ret == 0)
 				exit(0);
 
-			if (ret < 0) { /* TODO */
-				perror("read");
+			if (ret < 0) {
+				fprintf(stderr, "%s: read: %s\n", argv[0], strerror(errno));
 				exit(1);
 			}
 
