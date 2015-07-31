@@ -16,6 +16,28 @@ void usage(char *prgname)
 	exit(1);
 }
 
+ssize_t writen(int fd, const void *buf, size_t count)
+{
+	size_t written;
+	ssize_t ret;
+
+	written = 0;
+	while (written < count) {
+		ret = write(fd, ((char *) buf) + written, count - written);
+
+		if (ret <= 0) {
+			if (ret < 0 && errno == EINTR)
+				continue;
+
+			return ret;
+		}
+
+		written += ret;
+	}
+
+	return written;
+}
+
 int main(int argc, char *argv[])
 {
 	signal(SIGPIPE, SIG_IGN);
@@ -99,7 +121,8 @@ int main(int argc, char *argv[])
 			}
 
 			if (i >= MAX_NCONNS) {
-				fprintf(stderr, "%s: no free slot for the new incoming connection, closing\n");
+				fprintf(stderr, "%s: no free slot for "
+								"incoming connection, closing\n", argv[0]);
 				close(csock);
 			}
 		}
@@ -121,17 +144,13 @@ int main(int argc, char *argv[])
 				if (wsocks[i] < 0)
 					continue;
 
-				int wret = write(wsocks[i], buff, ret);
+				int wret = writen(wsocks[i], buff, ret);
 
-				if (wret < 0) {
+				if (wret != ret) {
+					fprintf(stderr, "%s: write error, "
+									"closing connection\n", argv[0]);
 					close(wsocks[i]);
 					wsocks[i] = -1;
-					continue;
-				}
-
-				if (wret != ret) { /* TODO */
-					perror("short write");
-					exit(1);
 				}
 			}
 		}
