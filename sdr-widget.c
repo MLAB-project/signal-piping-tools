@@ -101,8 +101,6 @@ void ozy_packet(char *packet)
 		fprintf(stderr, "%s: write didn't work out as expected\n", prgname);
 		return;
 	}
-
-	fprintf(stderr, "packet\n");
 }
 
 void usage()
