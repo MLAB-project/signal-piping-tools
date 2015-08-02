@@ -9,7 +9,7 @@
 
 #include <volk/volk.h>
 
-char const *prg_name;
+char const *prgname;
 
 float *read_taps(int *ntaps, char const *filename) {
 	size_t tapsmax = 1024;
@@ -55,7 +55,7 @@ float *read_taps(int *ntaps, char const *filename) {
 	return realloc(taps, sizeof(float) * *ntaps);
 
 fail:
-	fprintf(stderr, "%s: read_taps: %s\n", prg_name, strerror(errno));
+	fprintf(stderr, "%s: read_taps: %s\n", prgname, strerror(errno));
 
 	free(taps);
 	if (fhandle)
@@ -83,42 +83,58 @@ long readn(int f, void *av, long n)
 	return t;
 }
 
-int main(int argc, char const *argv[])
+void usage()
+{
+	fprintf(stderr, "%s: usage: %s [-b OUT_BUF_LEN] "
+					"SAMP_RATE CENTER_FREQ DECIMATION TAPS_FILE\n", prgname, prgname);
+	exit(1);
+}
+
+int main(int argc, char * const argv[])
 {
 	double samp_rate, center_freq;
 	int decimation, ntaps;
 	float *taps;
 
-	prg_name = argv[0];
+	prgname = argv[0];
+
+	int opt;
+	size_t outbuflen = 4096;
+	while ((opt = getopt(argc, argv, "b:")) != -1) {
+		switch (opt) {
+			case 'b':
+				outbuflen = atoi(optarg);
+				break;
+			default:
+				usage();
+		}
+	}
 
 	/* avoid volk's noise on stdout */
 	int fdout = dup(1);
 	close(1);
 	open("/dev/null", O_WRONLY);
 
-	if (argc != 5) {
-		fprintf(stderr, "%s: usage: %s SAMP_RATE CENTER_FREQ DECIMATION TAPS_FILE\n",
-				argv[0], argv[0]);
-		return 1;
-	}
+	if (argc - optind != 4)
+		usage();
 
-	samp_rate = atof(argv[1]);
-	center_freq = atof(argv[2]);
-	decimation = atoi(argv[3]);
+	samp_rate = atof(argv[optind++]);
+	center_freq = atof(argv[optind++]);
+	decimation = atoi(argv[optind++]);
 
 	if (samp_rate <= 0 /* || center_freq <= 0 */ || decimation <= 0) {
-		fprintf(stderr, "%s: bad SAMP_RATE, CETNER_FREQ or DECIMATION\n", argv[0]);
+		fprintf(stderr, "%s: bad SAMP_RATE, CETNER_FREQ or DECIMATION\n", prgname);
 		return 1;
 	}
 
-	taps = read_taps(&ntaps, argv[4]);
+	taps = read_taps(&ntaps, argv[optind++]);
 
 	if (!taps)
 		return 1;
 
 	if (ntaps < decimation)
 		fprintf(stderr, "%s: number of taps (%d) must be greater "
-						"than decimation rate (%d)\n", argv[0], ntaps, decimation);
+						"than decimation rate (%d)\n", prgname, ntaps, decimation);
 
 	/* FIXME or not */
 	complex float *ctaps = (complex float *) calloc(ntaps, sizeof(float complex));
@@ -135,7 +151,6 @@ int main(int argc, char const *argv[])
 	float complex phase = 1;
 	float complex wdec = cpowf(w, decimation);
 
-	size_t outbuflen = 4096;
 	float complex *viabuf = (float complex *) calloc(outbuflen, sizeof(float complex));
 	float complex *outbuf = (float complex *) calloc(outbuflen, sizeof(float complex));
 
@@ -174,6 +189,7 @@ int main(int argc, char const *argv[])
 			volk_32fc_x2_dot_prod_32fc(viabuf + o, inbuf + i, ctaps, ntaps);
 
 		volk_32fc_s32fc_x2_rotator_32fc(outbuf, viabuf, wdec, &phase, o);
+		phase /= cabs(phase);
 
 		if (write(fdout, outbuf, o * sizeof(float complex)) != o * sizeof(float complex))
 			goto fail;
@@ -191,7 +207,7 @@ cleanup:
 	return 0;
 
 fail:
-	fprintf(stderr, "%s: %s\n", prg_name, strerror(errno));
+	fprintf(stderr, "%s: %s\n", prgname, strerror(errno));
 
 	goto cleanup;
 }
