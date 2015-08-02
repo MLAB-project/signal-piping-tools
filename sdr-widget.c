@@ -1,5 +1,7 @@
 #include <libusb-1.0/libusb.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 char const *prgname;
 
@@ -103,12 +105,30 @@ void ozy_packet(char *packet)
 	fprintf(stderr, "packet\n");
 }
 
-int main(int argc, char const *argv[])
+void usage()
+{
+	fprintf(stderr, "%s: usage: %s [-r SAMP_RATE]\n", prgname, prgname);
+	exit(1);
+}
+
+int main(int argc, char * const argv[])
 {
 	libusb_device_handle *handle;
 	int ret;
 
 	prgname = argv[0];
+
+	int opt;
+	int samp_rate = 192000;
+	while ((opt = getopt(argc, argv, "r:")) != -1) {
+		switch (opt) {
+			case 'r':
+				samp_rate = atoi(optarg);
+				break;
+			default:
+				usage();
+		}
+	}
 
 	ret = libusb_init(NULL);
 
@@ -116,7 +136,7 @@ int main(int argc, char const *argv[])
 	if (!handle)
 		return 1;
 
-	if (set_sample_rate(handle, 192000) < 0)
+	if (set_sample_rate(handle, samp_rate) < 0)
 		return 1;
 
 	while (1) {
