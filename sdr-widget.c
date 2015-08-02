@@ -80,7 +80,7 @@ void ozy_packet(char *packet)
 {
 	char *p = packet;
 	int i;
-	float samples[128];
+	float samples[126];
 
 	if (*p++ != SYNC || *p++ != SYNC || *p++ != SYNC) {
 		fprintf(stderr, "%s: no sync, dropping packet\n", prgname);
