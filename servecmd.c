@@ -9,7 +9,7 @@
 
 void usage(char *prgname)
 {
-	fprintf(stderr, "%s: usage: %s [-d] [-p PORT] COMMAND\n", prgname, prgname);
+	fprintf(stderr, "%s: usage: %s [-w] [-d] [-p PORT] COMMAND\n", prgname, prgname);
 	exit(1);
 }
 
@@ -17,15 +17,19 @@ int main(int argc, char *argv[])
 {
 	short port = 2300;
 	int run_in_background = 0;
+	int wait_for_child = 0;
 
 	int opt;
-	while ((opt = getopt(argc, argv, "dp:")) != -1) {
+	while ((opt = getopt(argc, argv, "dp:w")) != -1) {
 		switch (opt) {
 			case 'p':
 				port = atoi(optarg);
 				break;
 			case 'd':
 				run_in_background = 1;
+				break;
+			case 'w':
+				wait_for_child = 1;
 				break;
 			default:
 				usage(argv[0]);
@@ -96,7 +100,8 @@ int main(int argc, char *argv[])
 			execvp("/bin/sh", args);
 		} else {
 			close(csock);
-			waitpid(pid, NULL, 0);
+			if (wait_for_child)
+				waitpid(pid, NULL, 0);
 		}
 	}
 
