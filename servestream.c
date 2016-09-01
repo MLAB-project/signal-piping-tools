@@ -71,6 +71,12 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	int optval = 1;
+	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) < 0){
+		fprintf(stderr, "%s: socket options: %s\n", argv[0], strerror(errno));
+		exit(1);
+	}
+
 	struct sockaddr_in addr;
 	bzero((char *) &addr, sizeof(addr));
 

@@ -45,8 +45,15 @@ int main(int argc, char *argv[])
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 
+
 	if (sock < 0) {
 		fprintf(stderr, "%s: socket: %s\n", argv[0], strerror(errno));
+		exit(1);
+	}
+
+	int optval = 1;
+	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) < 0){
+		fprintf(stderr, "%s: socket options: %s\n", argv[0], strerror(errno));
 		exit(1);
 	}
 
