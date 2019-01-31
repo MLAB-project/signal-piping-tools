@@ -24,7 +24,7 @@ x_fir_dec: x_fir_dec.c
 
 sdr-widget: sdr-widget.c
 	@printf "  CC  $(subst $(shell pwd)/,,$(@))\n";
-	$(Q) $(CC) -o$@ $< $(LIBS) -lusb-1.0
+	$(Q) $(CC) -o$@ $< $(LIBS) -lusb-1.0 -lpthread
 
 fitsread: fitsread.c
 	@printf "  CC  $(subst $(shell pwd)/,,$(@))\n";
