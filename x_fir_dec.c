@@ -11,6 +11,32 @@
 
 char const *prgname;
 
+float hann(int i, int N) {
+	float k = ((float) i + 1) / ((float) N + 1);
+	return pow(sin(M_PI*k), 2);
+}
+
+float *lowpass_coeffs(int *ntaps, int samp_rate, char const *desc) {
+	float f_c, wn_c;
+	float *taps;
+
+	if (sscanf(desc, "lp:%d:%f", ntaps, &f_c) != 2) {
+		fprintf(stderr, "%s: failed to understand '%s'\n",
+				prgname, desc);
+		exit(1);
+	}
+
+	wn_c = 2.f*M_PI*f_c/samp_rate;
+	taps = (float *) calloc(*ntaps, sizeof(float));
+	for (int i = 0; i < *ntaps; i++) {
+		int a_ = i*2 - (*ntaps - 1);
+		float a = ((float) a_) / 2;
+		taps[i] = hann(i,*ntaps)*(a_!=0 ? sin(a*wn_c)/a/M_PI : wn_c/M_PI);
+	}
+
+	return taps;
+}
+
 float *read_taps(int *ntaps, char const *filename) {
 	size_t tapsmax = 1024;
 	float *taps = NULL;
@@ -43,7 +69,7 @@ float *read_taps(int *ntaps, char const *filename) {
 	}
 
 	if (!feof(fhandle)) {
-		fprintf(stderr, "%s: read_taps: read error\n");
+		fprintf(stderr, "%s: read_taps: read error\n", prgname);
 		free(taps);
 		fclose(fhandle);
 		return NULL;
@@ -85,8 +111,8 @@ long readn(int f, void *av, long n)
 
 void usage()
 {
-	fprintf(stderr, "%s: usage: %s [-b OUT_BUF_LEN] "
-					"SAMP_RATE CENTER_FREQ DECIMATION TAPS_FILE\n", prgname, prgname);
+	fprintf(stderr, "%s: usage: %s [-b OUT_BUF_LEN] SAMP_RATE"
+			" CENTER_FREQ DECIMATION TAPS_FILE\n", prgname, prgname);
 	exit(1);
 }
 
@@ -127,7 +153,11 @@ int main(int argc, char * const argv[])
 		return 1;
 	}
 
-	taps = read_taps(&ntaps, argv[optind++]);
+	char *taps_fn = argv[optind++];
+	if (strncmp(taps_fn, "lp:", 3) != 0)
+		taps = read_taps(&ntaps, taps_fn);
+	else
+		taps = lowpass_coeffs(&ntaps, samp_rate, taps_fn);
 
 	if (!taps)
 		return 1;
@@ -211,3 +241,4 @@ fail:
 
 	goto cleanup;
 }
+
