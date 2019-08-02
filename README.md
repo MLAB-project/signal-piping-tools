@@ -20,7 +20,11 @@ Usage:
     $ x_fir_dec 
     x_fir_dec: usage: x_fir_dec [-b OUT_BUF_LEN] SAMP_RATE CENTER_FREQ DECIMATION TAPS_FILE
 
-Is allowed to define filter directly instead of use TAPS_FILE. An example of filter definition follows lp:256:3000.
+It is allowed to define filter directly instead of use TAPS_FILE. An example of filter definition: lp:256:3000.
 
-Značí to: lp - dolní propust, 256 - délka filtru, 3000 - konec propustný oblasti
-Tedy výsledná šířka je 6 khz, neboť je to 3 khz plus mínus
+It means: 
+  * lp - low pass
+  * 256 - filter depth 
+  * 3000 - end of passband
+  
+Resulting filter width will be 6 kHz, because it has tu be 3 kHz to both sides.
