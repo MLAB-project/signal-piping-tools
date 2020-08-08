@@ -6,7 +6,7 @@ A set of utilities for handling signal data streams from SDR receivers.  These u
 
 Get dependencies:
 
-    $ sudo apt-get install build-essential  libusb-dev libusb-1.0-0-dev  python-setuptools  libcfitsio-dev buffer pv ntp libvolk1-dev
+    $ sudo apt-get install build-essential  libusb-dev libusb-1.0-0-dev  python-setuptools  libcfitsio-dev buffer pv ntp libvolk2-dev
 
 And compile:
 
