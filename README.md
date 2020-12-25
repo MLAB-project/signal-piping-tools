@@ -27,4 +27,4 @@ It means:
   * 256 - filter depth 
   * 3000 - end of passband
   
-Resulting filter width will be 6 kHz, because it has tu be 3 kHz to both sides.
+Resulting filter width will be 6 kHz, because it has to be 3 kHz width to both sides.
